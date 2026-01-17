@@ -9,6 +9,8 @@ class SpeechApp {
         this.placeholder = document.getElementById('placeholder-text');
         this.clearBtn = document.getElementById('clear-btn');
         this.copyBtn = document.getElementById('copy-btn');
+        this.suggestionContainer = null;
+        this.createSuggestionUI();
 
         this.init();
     }
@@ -37,6 +39,14 @@ class SpeechApp {
         this.toggleBtn.addEventListener('click', () => this.toggleRecording());
         this.clearBtn.addEventListener('click', () => this.clearTranscript());
         this.copyBtn.addEventListener('click', () => this.copyToClipboard());
+    }
+
+    createSuggestionUI() {
+        this.suggestionContainer = document.createElement('div');
+        this.suggestionContainer.id = 'suggestion-container';
+        this.suggestionContainer.classList.add('suggestion-container');
+        this.suggestionContainer.innerHTML = '<h3>Suggestions</h3><div id="suggestions-list"></div>';
+        this.transcriptContainer.parentNode.insertBefore(this.suggestionContainer, this.transcriptContainer.nextSibling);
     }
 
     toggleRecording() {
@@ -106,6 +116,39 @@ class SpeechApp {
 
         this.transcriptContainer.appendChild(p);
         this.scrollToBottom();
+        this.fetchSuggestions(text);
+    }
+
+    async fetchSuggestions(text) {
+        try {
+            const response = await fetch('http://localhost:8000/suggest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ transcript: text }),
+            });
+            const data = await response.json();
+            this.displaySuggestions(data.suggestions);
+        } catch (err) {
+            console.error('Failed to fetch suggestions', err);
+        }
+    }
+
+    displaySuggestions(suggestions) {
+        const list = document.getElementById('suggestions-list');
+        if (!suggestions || suggestions.length === 0) {
+            // list.innerHTML = '<p>No suggestions yet.</p>';
+            return;
+        }
+
+        list.innerHTML = '';
+        suggestions.forEach(word => {
+            const span = document.createElement('span');
+            span.classList.add('suggestion-chip');
+            span.textContent = word;
+            list.appendChild(span);
+        });
     }
 
     updateInterimTranscript(text) {

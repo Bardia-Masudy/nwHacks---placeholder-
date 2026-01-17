@@ -201,8 +201,41 @@ button:active {
     }
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+
+.suggestion-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.suggestion-container h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.9rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+#suggestions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.suggestion-chip {
+    padding: 6px 12px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    animation: fadeInSuggestion 0.3s ease-out;
+}
+
+@keyframes fadeInSuggestion {
+    from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
