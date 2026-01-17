@@ -22,11 +22,13 @@ response = requests.post(
     }
 )
 result = response.json()
-output = 'output text not found'
 
-for item in result['output']:
-    if item['type'] == 'message':
-        print(f'{item['content']['text']}\n\n')
-        break
+if result['error'] == None:
+    for item in result['output']:
+        if item['type'] == 'message':
+            print(f'{item['content']['text']}\n\n')
+            break
+    else:
+        print("No output text found.")
 else:
-    print("No output text found.")
+    print(result['error']['message'])
