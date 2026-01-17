@@ -1,4 +1,0 @@
-streamlit
-snowflake-connector-python
-sseclient-py
-requests
