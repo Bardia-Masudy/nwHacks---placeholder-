@@ -1,8 +1,9 @@
 import requests
+import json
 from secrets import keys
 
 API_KEY = keys()
-MODEL = "tngtech/deepseek-r1t2-chimera:free"
+MODEL = "deepseek/deepseek-r1-0528:free"
 PROMPT = "It's a red fruit and starts with an a"
 
 response = requests.post(
@@ -13,7 +14,7 @@ response = requests.post(
     },
     json={
         'model': MODEL,
-        'input': f'Take a moment to think, then provide three single word answers. All other information will be ignored! Do not include any other details in your response. Provide the word being described by the prompt: {PROMPT}',
+        'input': f'Take a moment to think, then provide three unique single word answers. All other information will be ignored! Do not include any other details in your response. Provide the word being described by the prompt: {PROMPT}',
         'reasoning': {
             'effort': 'low'
         },
@@ -21,4 +22,11 @@ response = requests.post(
     }
 )
 result = response.json()
-print(result)
+output = 'output text not found'
+
+for item in result['output']:
+    if item['type'] == 'message':
+        print(f'{item['content']['text']}\n\n')
+        break
+else:
+    print("No output text found.")
