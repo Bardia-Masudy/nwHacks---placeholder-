@@ -230,7 +230,7 @@ const AppContent: React.FC = () => {
                                     <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-blue-600" />
                                 </div>
                             </div>
-                            <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-3 md:mb-4 tracking-tight px-4">Ready to find your words?</h2>
+                            <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-3 md:mb-4 tracking-tight px-4">Ready to speak?</h2>
                             <p className="text-base md:text-xl text-slate-500 max-w-md mx-auto mb-8 md:mb-10 leading-relaxed px-6">
                                 Start a session and I'll listen for pauses or struggles to offer helpful suggestions.
                             </p>

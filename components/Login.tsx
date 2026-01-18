@@ -212,7 +212,7 @@ const Login: React.FC = () => {
                 </div>
 
                 <p className="mt-8 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
-                    Secure Access • Encrypted Data • Privacy First
+                    This is not a licensed medical or therapy aid.
                 </p>
             </motion.div>
 
