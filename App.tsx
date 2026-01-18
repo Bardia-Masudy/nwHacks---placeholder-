@@ -151,10 +151,18 @@ const AppContent: React.FC = () => {
         };
     }, []);
 
+    const transcriptEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isRecording && transcriptEndRef.current) {
+            transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [transcript, isRecording]);
+
     return (
-        <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-200 overflow-x-hidden">
+        <div className="h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-200 overflow-hidden flex flex-col">
             {/* Header */}
-            <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
+            <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 flex-shrink-0">
                 <div className="max-w-5xl mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between">
                     <div className="flex items-center gap-2 md:gap-3">
                         <motion.div
@@ -187,7 +195,7 @@ const AppContent: React.FC = () => {
                 </div>
             </header>
 
-            <main className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-12 pb-40">
+            <main className="flex-1 max-w-4xl w-full mx-auto px-4 md:px-6 py-8 md:py-12 overflow-y-auto custom-scrollbar">
                 <AnimatePresence mode="wait">
                     {/* Error State */}
                     {error && (
@@ -245,10 +253,13 @@ const AppContent: React.FC = () => {
 
                             <div className="max-w-2xl w-full text-center px-4">
                                 {transcript ? (
-                                    <p className="text-2xl md:text-5xl font-bold text-slate-800 leading-[1.3] tracking-tight">
-                                        {transcript}
-                                        <span className="inline-block w-1 h-6 md:h-12 bg-blue-500 ml-2 animate-pulse align-middle"></span>
-                                    </p>
+                                    <div className="space-y-4">
+                                        <p className="text-2xl md:text-5xl font-bold text-slate-800 leading-[1.3] tracking-tight break-words">
+                                            {transcript}
+                                            <span className="inline-block w-1 h-6 md:h-12 bg-blue-500 ml-2 animate-pulse align-middle"></span>
+                                        </p>
+                                        <div ref={transcriptEndRef} />
+                                    </div>
                                 ) : (
                                     <div className="space-y-3 md:space-y-4">
                                         <p className="text-2xl md:text-3xl text-slate-300 font-bold animate-pulse">
@@ -315,35 +326,35 @@ const AppContent: React.FC = () => {
                 </AnimatePresence>
             </main>
 
-            {/* Floating Action Bar */}
-            <div className="fixed bottom-0 left-0 right-0 p-6 md:p-8 z-40 pointer-events-none">
-                <div className="max-w-md mx-auto flex flex-col items-center gap-3 md:gap-4 pointer-events-auto">
+            {/* Fixed Bottom Action Bar */}
+            <div className="bg-white/80 backdrop-blur-xl border-t border-slate-200 p-4 md:p-6 pb-8 md:pb-10 z-40 flex-shrink-0">
+                <div className="max-w-md mx-auto flex flex-col items-center gap-3 md:gap-4">
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={isRecording ? handleStopSession : handleStartSession}
                         className={`
-                            group relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl transition-all duration-500 overflow-hidden
+                            group relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-[1.5rem] shadow-xl transition-all duration-500 overflow-hidden
                             ${isRecording
-                                ? 'bg-red-500 hover:bg-red-600 shadow-red-500/40'
-                                : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/40'
+                                ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30'
+                                : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/30'
                             }
                         `}
                     >
                         <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         {isRecording ? (
-                            <MicOff className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                            <MicOff className="w-6 h-6 md:w-8 md:h-8 text-white" />
                         ) : (
-                            <Mic className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                            <Mic className="w-6 h-6 md:w-8 md:h-8 text-white" />
                         )}
                     </motion.button>
 
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white/90 backdrop-blur px-5 md:px-6 py-1.5 md:py-2 rounded-full shadow-lg border border-slate-200"
+                        className="bg-slate-100 px-4 md:px-5 py-1.5 md:py-2 rounded-full border border-slate-200"
                     >
-                        <p className="text-[10px] md:text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <p className="text-[10px] md:text-xs font-bold text-slate-600 flex items-center gap-2">
                             {isRecording ? (
                                 <>
                                     <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full animate-pulse"></span>
