@@ -57,6 +57,12 @@ const App: React.FC = () => {
              return null; // Clear suggestions after success
            });
         },
+        onRejectWord: () => {
+            // Clear rejected words.
+            setSuggestionCtx(current => {
+                return null; // Clear suggestions
+            });
+        },
         onTranscriptUpdate: () => {}, // Not strictly using transcript text in UI to keep it simple
         onError: (err) => setError(err)
       });

@@ -44,9 +44,18 @@ const confirmSelectionTool: FunctionDeclaration = {
     },
 };
 
+const rejectSelectionTool: FunctionDeclaration = {
+    name: "rejectSelection",
+    description: "Call this tool when the user rejects the provided suggestions or talks past them.",
+    parameters: {
+        type: Type.NULL,
+    },
+};
+
 interface GeminiServiceProps {
     onSuggestions: (words: string[], category: string) => void;
     onConfirmedWord: (word: string) => void;
+    onRejectWord: () => void;
     onTranscriptUpdate: (text: string) => void;
     onError: (error: string) => void;
 }
@@ -87,9 +96,10 @@ export class GeminiService {
                         Your main task is to listen to the user and identify when they are struggling to find a specific word (they might describe it, use circumlocution, or pause).
 
                         Protocol:
-                        1. If you detect Anomia (description instead of the noun), or when the user says a word like "okay", "yes", or "yeah", immediately call the function 'provideSuggestions' with 3 guesses and a Category.
-                        2. After offering suggestions, if the user says one of those words, call 'confirmSelection' with that word.`,
-                    tools: [{ functionDeclarations: [provideSuggestionsTool, confirmSelectionTool] }],
+                        1. If you detect Anomia (description instead of the noun), immediately call the function 'provideSuggestions' with 3 guesses and a Category.
+                        2. After offering suggestions, if the user says one of those words, call 'confirmSelection' with that word.
+                        3. If the user continues talking without acknowledging one of your suggestions, call 'rejectSelection'.`,
+                    tools: [{ functionDeclarations: [provideSuggestionsTool, confirmSelectionTool, rejectSelectionTool] }],
                 },
                 callbacks: {
                     onopen: () => {
@@ -151,6 +161,13 @@ export class GeminiService {
                         id: fc.id,
                         name: fc.name,
                         response: { result: "Word confirmed and logged." }
+                    });
+                } else if (fc.name === "rejectSelection") {
+                    this.props.onRejectWord();
+                    responses.push({
+                        id: fc.id,
+                        name: fc.name,
+                        response: { result: "Suggestions rejected." }
                     });
                 }
             }
