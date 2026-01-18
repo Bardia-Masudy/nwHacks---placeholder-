@@ -136,7 +136,7 @@ const ReportView: React.FC<ReportViewProps> = ({ logs, onClose }) => {
                                             data={[
                                                 { name: 'Manual Click', value: logs.filter(l => l.selectionMethod === 'manual_click').length },
                                                 { name: 'Voice Confirmed', value: logs.filter(l => l.selectionMethod === 'voice_confirmed').length },
-                                                { name: 'Implicit Split', value: logs.filter(l => l.selectionMethod === 'implicit_split').length },
+                                                { name: 'Passive', value: logs.filter(l => l.selectionMethod === 'implicit_split').length },
                                             ]}
                                             cx="50%"
                                             cy="50%"
