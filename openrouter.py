@@ -1,6 +1,5 @@
 import requests
-import json
-from secrets import keys
+from my_secrets import keys
 
 API_KEY = keys()
 MODEL = "deepseek/deepseek-r1-0528:free"
@@ -22,13 +21,11 @@ response = requests.post(
     }
 )
 result = response.json()
+output = 'output text not found'
 
-if result['error'] == None:
-    for item in result['output']:
-        if item['type'] == 'message':
-            print(f'{item['content']['text']}\n\n')
-            break
-    else:
-        print("No output text found.")
+for item in result['output']:
+    if item['type'] == 'message':
+        print(f'{item['content']['text']}\n\n')
+        break
 else:
-    print(result['error']['message'])
+    print("No output text found.")

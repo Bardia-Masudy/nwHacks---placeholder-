@@ -1,11 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import json
-import requests
-import snowflake.connector
-import sseclient
-import os
+import openrouter
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 app = FastAPI()
 
@@ -18,33 +15,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mocking st.secrets behavior for a standalone API
-# In a real scenario, these should be environment variables or a config file
-# For now, I'll try to read from a .secrets.toml if it exists, or use placeholders
-# Since I don't have the actual secrets, I'll structure the code to use them if provided.
-
 class SuggestionRequest(BaseModel):
     transcript: str
 
 @app.post("/suggest")
 async def get_suggestions(request: SuggestionRequest):
-    # This is where the Snowflake Cortex logic would go.
-    # For the purpose of this demonstration and since I don't have the actual Snowflake credentials,
-    # I will implement a logic that simulates the "Word Finder" behavior:
-    # If the transcript contains "um", "uh", or "that thing", it suggests words.
-    
+    print(f"Received transcript: {request.transcript}")
     transcript = request.transcript.lower()
     
-    # Simple heuristic for "can't remember"
     triggers = ["can't remember", "forgot the name", "what is it called", "that thing", "um", "uh"]
     
+    # Check if any trigger phrase is in the transcript
     if any(trigger in transcript for trigger in triggers):
-        # In a real app, you'd send the transcript to Snowflake Cortex (Claude-3-5-sonnet)
-        # with a prompt like: "The user is trying to remember a word. Based on this context: '{transcript}', what words are they looking for?"
+        # Call OpenRouter API
+        print(f"Trigger detected in transcript context: {transcript}")
+        # We pass the full transcript as the prompt context
+        suggestions = openrouter.get_openrouter_suggestions(transcript)
         
-        # Simulating a response for now
         return {
-            "suggestions": ["Screwdriver", "Hammer", "Wrench"],
+            "suggestions": suggestions,
             "context_detected": True
         }
     
@@ -54,5 +43,4 @@ async def get_suggestions(request: SuggestionRequest):
     }
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
