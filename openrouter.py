@@ -1,31 +1,55 @@
 import requests
-from my_secrets import keys
+from secrets import keys
 
-API_KEY = keys()
-MODEL = "deepseek/deepseek-r1-0528:free"
-PROMPT = "It's a red fruit and starts with an a"
+class OpenRouterClient():
+    def __init__(self):
+        self.api_key = keys()
+        self.url = "https://openrouter.ai/api/v1/chat/completions"
+        self.model = "deepseek/deepseek-r1-0528:free"
+    
+    def _get_choice_text(choice):
+        return choice["message"]["content"]
 
-response = requests.post(
-    'https://openrouter.ai/api/v1/responses',
-    headers={
-        'Authorization': f'Bearer {API_KEY}',
+    def _get_headers(self):
+        headers = {
+        'Authorization': f'Bearer {self.api_key}',
         'Content-Type': 'application/json',
-    },
-    json={
-        'model': MODEL,
-        'input': f'Take a moment to think, then provide three unique single word answers. All other information will be ignored! Do not include any other details in your response. Provide the word being described by the prompt: {PROMPT}',
-        'reasoning': {
-            'effort': 'low'
-        },
-        'max_output_tokens': 1000,
-    }
-)
-result = response.json()
-output = 'output text not found'
+        }
+        return headers
+    
+    def request(self, prompt: str):
+        headers = self._get_headers()
+        data = {
+            'model': self.model,
+            'messages': [
+                {'role': 'user', 'content': f'Take a moment to think, then provide three unique one word answers. All other information will be ignored! Do not include any other details in your response. Provide the word being described by the prompt: {prompt}'},
+            ],
+            'reasoning': {
+                "effort": "xhigh", # Can be "xhigh", "high", "medium", "low", "minimal" or "none"
+                "exclude": True # Set to true to exclude reasoning tokens from response
+            },
+            'max_output_tokens': 1000
+        }
 
-for item in result['output']:
-    if item['type'] == 'message':
-        print(f'{item['content']['text']}\n\n')
-        break
-else:
-    print("No output text found.")
+        response = requests.post(self.url, headers=headers, json=data)
+        response_data = response.json()
+
+        if response.status_code == 200:
+            output = response_data['choices'][0]['message']['content'].lower()
+            if output == "":
+                return f'Output Missing: {response_data}'
+            return output
+        else:
+            return f'Error: {response_data}'
+        
+
+    
+    def __call__(self, prompt):
+        response_data = self.request(prompt)
+        # completions = [choice['message']['content'] for choice in response_data.get("choices", [])]
+        print(response_data)
+
+
+if __name__ == "__main__":
+    machine = OpenRouterClient()
+    machine("Hot drink morning bean water")
