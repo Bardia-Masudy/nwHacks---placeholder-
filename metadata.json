@@ -1,0 +1,7 @@
+{
+  "name": "Anomia Aid",
+  "description": "A real-time word retrieval assistant for individuals with anomic aphasia, providing smart suggestions and therapeutic reporting.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

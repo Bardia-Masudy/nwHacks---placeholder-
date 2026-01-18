@@ -1,6 +1,0 @@
-streamlit
-snowflake-connector-python
-sseclient-py
-requests
-fastapi
-uvicorn
