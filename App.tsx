@@ -85,6 +85,8 @@ const AppContent: React.FC = () => {
                     const category = current?.category || 'General';
                     addLog(word, category, 1.0, 'voice_confirmed');
                     setSuggestionCtx(null);
+                    setFinalTranscript("");
+                    setInterimTranscript("");
                 },
                 onRejectWord: () => {
                     setSuggestionCtx(null);
@@ -136,6 +138,8 @@ const AppContent: React.FC = () => {
         if (!suggestionCtx) return;
         addLog(word, suggestionCtx.category, 1.0, 'manual_click');
         setSuggestionCtx(null);
+        setFinalTranscript("");
+        setInterimTranscript("");
     };
 
     const handleSkip = () => {
@@ -296,7 +300,7 @@ const AppContent: React.FC = () => {
                                 </button>
                             </div>
 
-                            <div className="grid gap-3 md:gap-5">
+                            <div className="grid gap-3 md:gap-4">
                                 {suggestionCtx.words.map((word, idx) => (
                                     <motion.button
                                         key={`${word}-${idx}`}
@@ -306,14 +310,14 @@ const AppContent: React.FC = () => {
                                         whileHover={{ scale: 1.01, translateX: 4 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={() => handleManualSelect(word, idx)}
-                                        className="group relative w-full text-left p-6 md:p-10 bg-white border border-slate-200 hover:border-blue-500 rounded-2xl md:rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 flex items-center justify-between overflow-hidden"
+                                        className="group relative w-full text-left p-4 md:p-6 bg-white border border-slate-200 hover:border-blue-500 rounded-xl md:rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex items-center justify-between overflow-hidden"
                                     >
-                                        <div className="absolute top-0 left-0 w-1.5 md:w-2 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                        <span className="text-2xl md:text-6xl font-black text-slate-900 group-hover:text-blue-600 tracking-tighter">
+                                        <div className="absolute top-0 left-0 w-1 md:w-1.5 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <span className="text-xl md:text-4xl font-black text-slate-900 group-hover:text-blue-600 tracking-tighter">
                                             {word}
                                         </span>
-                                        <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 group-hover:bg-blue-600 flex items-center justify-center transition-all duration-300 shadow-inner">
-                                            <CheckCircle2 className="w-5 h-5 md:w-7 md:h-7 text-slate-300 group-hover:text-white transition-colors" />
+                                        <div className="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-slate-50 group-hover:bg-blue-600 flex items-center justify-center transition-all duration-300 shadow-inner">
+                                            <CheckCircle2 className="w-4 h-4 md:w-6 md:h-6 text-slate-300 group-hover:text-white transition-colors" />
                                         </div>
                                     </motion.button>
                                 ))}
