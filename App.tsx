@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GeminiService } from './services/gemini';
+import { SpeechService } from './services/speech';
 import { getAllLogsFromDB, addLogToDB } from './services/db';
 import { WordLog, SuggestionContext } from './types';
 import ReportView from './components/ReportView';
@@ -16,8 +17,10 @@ const AppContent: React.FC = () => {
   const [logs, setLogs] = useState<WordLog[]>([]);
   const [showReport, setShowReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<string>("");
 
   const geminiRef = useRef<GeminiService | null>(null);
+  const speechRef = useRef<SpeechService | null>(null);
 
   // Helper to log words
   const addLog = (word: string, category: string, weight: number, method: WordLog['selectionMethod']) => {
@@ -91,7 +94,25 @@ const AppContent: React.FC = () => {
         onTranscriptUpdate: () => { }, // Not strictly using transcript text in UI to keep it simple
         onError: (err) => setError(err)
       });
+
+      // Initialize Speech Service
+      speechRef.current = new SpeechService(
+        (text, isFinal) => {
+          if (isFinal) {
+            setTranscript(prev => prev ? prev + ". " + text : text);
+          } else {
+            // Option: Show interim results if desired, or just wait for final
+            // For now, let's show interim to be responsive
+            // We need a way to verify interim vs final in UI if we want to be fancy
+            // But simpler is just:
+            setTranscript(text);
+          }
+        },
+        (err) => console.warn("Speech warning:", err)
+      );
+
       await geminiRef.current.connect();
+      speechRef.current.start();
       setIsRecording(true);
     } catch (e) {
       setError("Failed to start session.");
@@ -103,6 +124,12 @@ const AppContent: React.FC = () => {
       await geminiRef.current.disconnect();
       geminiRef.current = null;
     }
+
+    if (speechRef.current) {
+      speechRef.current.stop();
+      speechRef.current = null;
+    }
+
     setIsRecording(false);
 
     // If there were pending suggestions, log them as split 
@@ -128,7 +155,10 @@ const AppContent: React.FC = () => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (geminiRef.current) geminiRef.current.disconnect();
+      return () => {
+        if (geminiRef.current) geminiRef.current.disconnect();
+        if (speechRef.current) speechRef.current.stop();
+      };
     };
   }, []);
 
@@ -185,6 +215,24 @@ const AppContent: React.FC = () => {
             <p className="text-lg text-slate-600 max-w-md mx-auto mb-8">
               Press the microphone button below to begin the session. Describe words you can't find, and I will help you.
             </p>
+          </div>
+        )}
+
+        {/* Live Transcript (Center Screen) */}
+        {isRecording && !suggestionCtx && (
+          <div className="flex flex-col items-center justify-center py-10 min-h-[40vh] animate-fade-in-up">
+            <div className="mb-8">
+              <div className="w-4 h-4 bg-red-500 rounded-full animate-ping" />
+            </div>
+            {transcript ? (
+              <p className="text-3xl md:text-4xl font-medium text-slate-700 text-center max-w-2xl leading-relaxed tracking-tight">
+                {transcript}
+              </p>
+            ) : (
+              <p className="text-2xl text-slate-400 font-medium animate-pulse">
+                Listening...
+              </p>
+            )}
           </div>
         )}
 
@@ -246,6 +294,9 @@ const AppContent: React.FC = () => {
             )}
           </button>
         </div>
+
+
+
         <p className="text-center mt-3 text-sm font-medium text-slate-500">
           {isRecording ? "Listening..." : "Tap to Start"}
         </p>
