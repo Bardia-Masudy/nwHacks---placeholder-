@@ -58,8 +58,8 @@ const ReportView: React.FC<ReportViewProps> = ({ logs, onClose }) => {
                 {/* Header */}
                 <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 print:bg-white print:border-b-2 print:p-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-800">Therapy Session Report</h2>
-                        <p className="text-slate-500 text-sm">Patient Word Retrieval Analytics</p>
+                        <h2 className="text-2xl font-bold text-slate-800">Communication Summary</h2>
+                        <p className="text-slate-500 text-sm">Word retrieval patterns and usage log</p>
                     </div>
                     <div className="flex gap-3 print:hidden">
                         <button
