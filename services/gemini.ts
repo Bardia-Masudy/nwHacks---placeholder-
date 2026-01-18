@@ -93,12 +93,21 @@ export class GeminiService {
                 config: {
                     responseModalities: [Modality.AUDIO],
                     systemInstruction: `You are an empathetic Speech Language Pathology assistant for a person with Anomic Aphasia.
-                        Your main task is to listen to the user and identify when they are struggling to find a specific word (they might describe it, use circumlocution, or pause).
+                        Your main task is to listen to the user and identify when they are struggling to find a specific word.
+                        
+                        CRITICAL INSTRUCTION: You must be HYPER-SENSITIVE to hesitation.
+                        
+                        Triggers for 'provideSuggestions':
+                        1.  **Description/Circumlocution**: User describes a word (e.g., "The thing you cut with") instead of saying it.
+                        2.  **Hesitation/Pauses**: User stops mid-sentence or pauses > 0.5 seconds.
+                        3.  **Filler Words**: User says "um", "uh", "it's on the tip of my tongue".
+                        4.  **Explicit Request**: User says "help", "what is it", "okay", "please".
 
                         Protocol:
-                        1. If you detect Anomia (description instead of the noun) or when the user says "okay", "please", "now", immediately call the function 'provideSuggestions' with 3 guesses and a Category.
-                        2. After offering suggestions, if the user says one of those words, call 'confirmSelection' with that word.
-                        3. If the user continues talking without acknowledging one of your suggestions, call 'rejectSelection'.`,
+                        1.  As soon as you detect ANY of the above triggers, IMMEDIATELY call 'provideSuggestions'. 
+                        2.  CRITICAL: DO NOT SPEAK. DO NOT say "I can help with that" or "Here are some suggestions". SILENTLY call the tool immediately. This is vital for speed.
+                        3.  After offering suggestions, wait for the user. If they say a word, call 'confirmSelection'.
+                        4.  If talking continues irrelevant to suggestions, call 'rejectSelection'.`,
                     tools: [{ functionDeclarations: [provideSuggestionsTool, confirmSelectionTool, rejectSelectionTool] }],
                 },
                 callbacks: {
@@ -123,8 +132,8 @@ export class GeminiService {
         if (!this.inputAudioContext) return;
 
         this.mediaStreamSource = this.inputAudioContext.createMediaStreamSource(stream);
-        // Buffer size 4096 is a balance between latency and processing overhead
-        this.scriptProcessor = this.inputAudioContext.createScriptProcessor(4096, 1, 1);
+        // Buffer size 2048 = ~128ms latency at 16kHz. 4096 was ~256ms.
+        this.scriptProcessor = this.inputAudioContext.createScriptProcessor(2048, 1, 1);
 
         this.scriptProcessor.onaudioprocess = (e) => {
             const inputData = e.inputBuffer.getChannelData(0);
