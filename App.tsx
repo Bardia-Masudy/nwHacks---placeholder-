@@ -61,17 +61,14 @@ const AppContent: React.FC = () => {
         }).catch(console.error);
     }, []);
 
+    // Logic for implicit split (50/40/10)
+    // This is called when new suggestions arrive replacing old ones, or session ends with pending suggestions
     const processImplicitSplit = useCallback((ctx: SuggestionContext) => {
         const weights = [0.5, 0.4, 0.1];
         ctx.words.forEach((word, idx) => {
             addLog(word, ctx.category, weights[idx] || 0.1, 'implicit_split');
         });
     }, []);
-
-    const showConfirmation = (word: string) => {
-        setConfirmationMessage(`Selected: ${word}`);
-        setTimeout(() => setConfirmationMessage(null), 2000);
-    };
 
     const handleStartSession = async () => {
         setError(null);
@@ -180,10 +177,7 @@ const AppContent: React.FC = () => {
     const handleManualSelect = (word: string, index: number) => {
         if (!suggestionCtx) return;
         addLog(word, suggestionCtx.category, 1.0, 'manual_click');
-        setSuggestionCtx(null);
-        setFinalTranscript("");
-        setInterimTranscript("");
-        showConfirmation(word);
+        setSuggestionCtx(null); // Clear after selection
     };
 
     const handleSkip = () => {
@@ -192,20 +186,12 @@ const AppContent: React.FC = () => {
         }
     };
 
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
             if (geminiRef.current) geminiRef.current.disconnect();
-            if (speechRef.current) speechRef.current.stop();
         };
     }, []);
-
-    const transcriptEndRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (isRecording && transcriptEndRef.current) {
-            transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
-        }
-    }, [transcript, isRecording]);
 
     return (
         <div className="h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-blue-200 overflow-hidden flex flex-col">
@@ -262,63 +248,20 @@ const AppContent: React.FC = () => {
                     )}
                 </AnimatePresence>
 
-                <AnimatePresence mode="wait">
-                    {/* Introduction / Empty State */}
-                    {!isRecording && !suggestionCtx && (
-                        <motion.div
-                            key="empty-state"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="flex flex-col items-center justify-center min-h-full py-12 md:py-0"
-                        >
-                            <div className="relative inline-block mb-8 md:mb-10">
-                                <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full"></div>
-                                <div className="relative w-24 h-24 md:w-32 md:h-32 bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl flex items-center justify-center mx-auto border border-slate-100">
-                                    <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-blue-600" />
-                                </div>
-                            </div>
-                            <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-3 md:mb-4 tracking-tight px-4 text-center">Ready to find your words?</h2>
-                            <p className="text-base md:text-xl text-slate-500 max-w-md mx-auto mb-8 md:mb-10 leading-relaxed px-6 text-center">
-                                Start a session and I'll listen for pauses or struggles to offer helpful suggestions.
-                            </p>
-                        </motion.div>
-                    )}
-
-                    {/* Live Transcript */}
-                    {isRecording && !suggestionCtx && (
-                        <motion.div
-                            key="recording-state"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="flex flex-col items-center justify-center py-10 md:py-16 min-h-[40vh] md:min-h-[45vh]"
-                        >
-                            <div className="mb-8 md:mb-12 relative">
-                                <div className="absolute inset-0 bg-red-500/20 blur-2xl rounded-full animate-pulse"></div>
-                                <div className="relative w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
-                            </div>
-
-                            <div className="max-w-2xl w-full text-center px-4">
-                                {transcript ? (
-                                    <div className="space-y-4">
-                                        <p className="text-2xl md:text-5xl font-bold text-slate-800 leading-[1.3] tracking-tight break-words">
-                                            {transcript}
-                                            <span className="inline-block w-1 h-6 md:h-12 bg-blue-500 ml-2 animate-pulse align-middle"></span>
-                                        </p>
-                                        <div ref={transcriptEndRef} />
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3 md:space-y-4">
-                                        <p className="text-2xl md:text-3xl text-slate-300 font-bold animate-pulse">
-                                            Listening...
-                                        </p>
-                                        <p className="text-slate-400 text-xs md:text-sm font-medium">Speak naturally, I'm here to help.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
+                {/* Introduction / Empty State */}
+                {!isRecording && !suggestionCtx && (
+                    <div className="text-center py-20">
+                        <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-3xl font-bold text-slate-800 mb-4">Ready to start therapy?</h2>
+                        <p className="text-lg text-slate-600 max-w-md mx-auto mb-8">
+                            Press the microphone button below to begin the session. Describe words you can't find, and I will help you.
+                        </p>
+                    </div>
+                )}
 
                     {/* Active Suggestions */}
                     {suggestionCtx && (
@@ -374,76 +317,35 @@ const AppContent: React.FC = () => {
                 </AnimatePresence>
             </main>
 
-            {/* Confirmation Toast */}
-            <AnimatePresence>
-                {confirmationMessage && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3"
-                    >
-                        <CheckCircle2 className="w-5 h-5 text-green-400" />
-                        <span className="font-medium">{confirmationMessage}</span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Fixed Bottom Action Bar */}
-            <div className="bg-white/80 backdrop-blur-xl border-t border-slate-200 p-4 md:p-6 pb-8 md:pb-10 z-40 flex-shrink-0">
-                <div className="max-w-md mx-auto flex flex-col items-center gap-3 md:gap-4">
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+            {/* Floating Action Bar (Sticky Bottom) */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-slate-200 p-6 z-20">
+                <div className="max-w-md mx-auto flex items-center justify-center">
+                    <button
                         onClick={isRecording ? handleStopSession : handleStartSession}
                         className={`
-                            group relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-[1.5rem] shadow-xl transition-all duration-500 overflow-hidden
-                            ${isRecording
-                                ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30'
-                                : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/30'
-                            }
-                        `}
-                    >
-                        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        {isRecording ? (
-                            <MicOff className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                        ) : (
-                            <Mic className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                        )}
-                    </motion.button>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-slate-100 px-4 md:px-5 py-1.5 md:py-2 rounded-full border border-slate-200"
-                    >
-                        <p className="text-[10px] md:text-xs font-bold text-slate-600 flex items-center gap-2">
-                            {isRecording ? (
-                                <>
-                                    <span className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full animate-pulse"></span>
-                                    Session Active
-                                </>
-                            ) : (
-                                "Tap to Start Session"
-                            )}
-                        </p>
-                    </motion.div>
-                </div>
-            </div>
+              relative flex items-center justify-center w-20 h-20 rounded-full shadow-lg transition-all duration-300
+              ${isRecording
+                ? 'bg-red-500 hover:bg-red-600 ring-4 ring-red-200 animate-pulse'
+                : 'bg-blue-600 hover:bg-blue-700 ring-4 ring-blue-100 hover:scale-105'
+              }
+            `}
+          >
+            {isRecording ? (
+              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
+            ) : (
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+            )}
+          </button>
+        </div>
+        <p className="text-center mt-3 text-sm font-medium text-slate-500">
+          {isRecording ? "Listening..." : "Tap to Start"}
+        </p>
+      </div>
 
             {/* Report Modal */}
-            <AnimatePresence>
-                {showReport && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100]"
-                    >
-                        <ReportView logs={logs} onClose={() => setShowReport(false)} />
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {showReport && (
+                <ReportView logs={logs} onClose={() => setShowReport(false)} />
+            )}
         </div>
     );
 };

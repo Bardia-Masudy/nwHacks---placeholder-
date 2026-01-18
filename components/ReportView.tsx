@@ -42,35 +42,25 @@ const ReportView: React.FC<ReportViewProps> = ({ logs, onClose }) => {
     }, [logs]);
 
     return (
-        <div id="report-printable" className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:fixed print:inset-0 print:z-[9999]">
-            <style type="text/css" media="print">
-                {`
-                  @page { size: auto; margin: 15mm; }
-                  body { visibility: hidden; }
-                  #report-printable { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; height: auto !important; overflow: visible !important; display: block !important; }
-                  #report-printable * { visibility: visible; }
-                  /* Hide scrollbars in print */
-                  ::-webkit-scrollbar { display: none; }
-                `}
-            </style>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden print:block print:h-auto print:max-h-none print:rounded-none print:shadow-none print:overflow-visible">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
 
                 {/* Header */}
-                <div className="p-4 md:p-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 print:bg-white print:border-b-2 print:p-4">
+                <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                     <div>
-                        <h2 className="text-xl md:text-2xl font-bold text-slate-800">Communication Summary</h2>
-                        <p className="text-slate-500 text-xs md:text-sm">Word retrieval patterns and usage log</p>
+                        <h2 className="text-2xl font-bold text-slate-800">Therapy Session Report</h2>
+                        <p className="text-slate-500 text-sm">Patient Word Retrieval Analytics</p>
                     </div>
-                    <div className="flex gap-2 md:gap-3 w-full sm:w-auto print:hidden">
+                    <div className="flex gap-3">
                         <button
                             onClick={() => window.print()}
-                            className="flex-1 sm:flex-none px-3 md:px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium text-sm"
+                            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition font-medium"
                         >
-                            Print
+                            Print Report
                         </button>
                         <button
                             onClick={onClose}
-                            className="flex-1 sm:flex-none px-3 md:px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition font-medium text-sm"
+                            className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition font-medium"
                         >
                             Close
                         </button>
@@ -78,48 +68,38 @@ const ReportView: React.FC<ReportViewProps> = ({ logs, onClose }) => {
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 md:space-y-8 print:block print:h-auto print:overflow-visible print:space-y-4 print:p-0 print:mt-4">
+                <div className="flex-1 overflow-y-auto p-6 space-y-8">
 
                     {/* Top Metrics */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 print:grid-cols-3 print:gap-4">
-                        <div className="bg-blue-50 p-4 md:p-6 rounded-xl border border-blue-100 print:p-3 print:border-2 print:rounded-lg">
-                            <h3 className="text-blue-600 font-semibold mb-1 text-xs md:text-sm print:text-xs print:text-black uppercase tracking-wider">Words Recovered</h3>
-                            <p className="text-3xl md:text-4xl font-bold text-slate-800 print:text-xl">
-                                {logs.filter(l => l.selectionMethod === 'voice_confirmed' || l.selectionMethod === 'manual_click').length}
-                            </p>
-                            <p className="text-[10px] md:text-sm text-slate-500 mt-1 print:text-[10px]">Confirmed by user</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                            <h3 className="text-blue-600 font-semibold mb-1">Total Words Logged</h3>
+                            <p className="text-4xl font-bold text-slate-800">{logs.length}</p>
                         </div>
-                        <div className="bg-amber-50 p-4 md:p-6 rounded-xl border border-amber-100 print:p-3 print:border-2 print:rounded-lg">
-                            <h3 className="text-amber-600 font-semibold mb-1 text-xs md:text-sm print:text-xs print:text-black uppercase tracking-wider">Passive Assists</h3>
-                            <p className="text-3xl md:text-4xl font-bold text-slate-800 print:text-xl">
-                                {logs.filter(l => l.selectionMethod === 'implicit_split').length}
-                            </p>
-                            <p className="text-[10px] md:text-sm text-slate-500 mt-1 print:text-[10px]">Suggestions viewed</p>
+                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-100">
+                            <h3 className="text-amber-600 font-semibold mb-1">Active Categories</h3>
+                            <p className="text-4xl font-bold text-slate-800">{categoryData.length}</p>
                         </div>
-                        <div className="bg-emerald-50 p-4 md:p-6 rounded-xl border border-emerald-100 print:p-3 print:border-2 print:rounded-lg">
-                            <h3 className="text-emerald-600 font-semibold mb-1 text-xs md:text-sm print:text-xs print:text-black uppercase tracking-wider">Engagement Rate</h3>
-                            <p className="text-3xl md:text-4xl font-bold text-slate-800 print:text-xl">
-                                {(() => {
-                                    const activeCount = logs.filter(l => l.selectionMethod === 'voice_confirmed' || l.selectionMethod === 'manual_click').length;
-                                    const passiveCount = logs.filter(l => l.selectionMethod === 'implicit_split').length;
-                                    const total = activeCount + passiveCount;
-                                    return total > 0 ? Math.round((activeCount / total) * 100) : 0;
-                                })()}%
+                        <div className="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
+                            <h3 className="text-emerald-600 font-semibold mb-1">Voice Success Rate</h3>
+                            <p className="text-4xl font-bold text-slate-800">
+                                {logs.length > 0
+                                    ? Math.round((logs.filter(l => l.selectionMethod === 'voice_confirmed').length / logs.length) * 100)
+                                    : 0}%
                             </p>
-                            <p className="text-[10px] md:text-sm text-slate-500 mt-1 print:text-[10px]">Suggestions acted upon</p>
                         </div>
                     </div>
 
                     {/* Charts Section */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 print:block print:mt-4">
-                        <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm print:border-2 print:shadow-none print:p-4 print:break-inside-avoid print:mb-6">
-                            <h3 className="text-base md:text-lg font-bold text-slate-800 mb-4 md:mb-6 print:mb-2 print:text-base">Category Breakdown</h3>
-                            <div className="h-48 md:h-64">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6">Category Breakdown (Weighted)</h3>
+                            <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={categoryData} layout="vertical" margin={{ left: 0, right: 20 }}>
+                                    <BarChart data={categoryData} layout="vertical" margin={{ left: 20 }}>
                                         <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                                        <XAxis type="number" hide />
-                                        <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 10 }} interval={0} />
+                                        <XAxis type="number" />
+                                        <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
                                         <Tooltip cursor={{ fill: '#f1f5f9' }} />
                                         <Bar dataKey="value" fill="#2563eb" radius={[0, 4, 4, 0]} />
                                     </BarChart>
@@ -127,21 +107,21 @@ const ReportView: React.FC<ReportViewProps> = ({ logs, onClose }) => {
                             </div>
                         </div>
 
-                        <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm print:border-2 print:shadow-none print:p-4 print:break-inside-avoid print:mb-6">
-                            <h3 className="text-base md:text-lg font-bold text-slate-800 mb-4 md:mb-6 print:mb-2 print:text-base">Selection Methods</h3>
-                            <div className="h-48 md:h-64">
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6">Selection Method Distribution</h3>
+                            <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
                                             data={[
-                                                { name: 'Manual', value: logs.filter(l => l.selectionMethod === 'manual_click').length },
-                                                { name: 'Voice', value: logs.filter(l => l.selectionMethod === 'voice_confirmed').length },
-                                                { name: 'Passive', value: logs.filter(l => l.selectionMethod === 'implicit_split').length },
+                                                { name: 'Manual Click', value: logs.filter(l => l.selectionMethod === 'manual_click').length },
+                                                { name: 'Voice Confirmed', value: logs.filter(l => l.selectionMethod === 'voice_confirmed').length },
+                                                { name: 'Implicit Split', value: logs.filter(l => l.selectionMethod === 'implicit_split').length },
                                             ]}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={40}
-                                            outerRadius={60}
+                                            innerRadius={60}
+                                            outerRadius={80}
                                             fill="#8884d8"
                                             paddingAngle={5}
                                             dataKey="value"
@@ -151,7 +131,7 @@ const ReportView: React.FC<ReportViewProps> = ({ logs, onClose }) => {
                                             ))}
                                         </Pie>
                                         <Tooltip />
-                                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                                        <Legend />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
@@ -160,8 +140,8 @@ const ReportView: React.FC<ReportViewProps> = ({ logs, onClose }) => {
 
                     {/* Logs Table */}
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="p-4 md:p-6 border-b border-slate-200">
-                            <h3 className="text-base md:text-lg font-bold text-slate-800">Session Log Details</h3>
+                        <div className="p-6 border-b border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800">Session Log Details</h3>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm text-slate-600">

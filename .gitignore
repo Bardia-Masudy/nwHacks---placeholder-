@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .env
+.env.local
 my_secrets.py
 
 # Editor directories and files
