@@ -97,11 +97,9 @@ const AppContent: React.FC = () => {
           setSuggestionCtx(null);
         },
         onTranscriptUpdate: (text) => {
-          // Use Gemini transcription as fallback (or if Web Speech isn't available)
-          if (!hasWebSpeech || !speechRef.current) {
-            console.log('[App] Using Gemini transcription:', text);
-            setFinalTranscript(prev => prev + text);
-          }
+          // Always use Gemini transcription - works on all devices including Android
+          console.log('[App] Gemini transcription received:', text);
+          setFinalTranscript(prev => prev + text);
         },
         onError: (err) => setError(err)
       });
@@ -132,9 +130,9 @@ const AppContent: React.FC = () => {
         console.log('[App] Web Speech not available, using Gemini transcription only');
       }
 
-      // Connect to Gemini (always needed for suggestions + transcription fallback)
-      // Enable TEXT modality if Web Speech isn't available
-      await geminiRef.current.connect(!hasWebSpeech);
+      // Connect to Gemini with TEXT modality always enabled for universal transcription
+      // This ensures ALL devices (especially Android) get reliable transcription
+      await geminiRef.current.connect(true);
 
       // Start Web Speech if available
       if (speechRef.current) {
