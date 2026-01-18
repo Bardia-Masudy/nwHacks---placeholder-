@@ -1,11 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import json
-import requests
-import snowflake.connector
-import sseclient
-import os
+import openrouter
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -23,19 +20,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+<<<<<<< HEAD
 # Configure Gemini
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-2.5-flash')
 
+=======
+>>>>>>> 04e9ff19073840e8ed30be4b2c2e0f8c55deb483
 class SuggestionRequest(BaseModel):
     transcript: str
 
 @app.post("/suggest")
 async def get_suggestions(request: SuggestionRequest):
+<<<<<<< HEAD
+=======
+    print(f"Received transcript: {request.transcript}")
+>>>>>>> 04e9ff19073840e8ed30be4b2c2e0f8c55deb483
     transcript = request.transcript.lower()
     print(f"Received transcript: {transcript}")
     
+<<<<<<< HEAD
     # Much broader triggers for better detection
     triggers = [
         "remember", "forgot", "what is", "what's", "that thing", 
@@ -73,6 +78,21 @@ async def get_suggestions(request: SuggestionRequest):
                 "context_detected": True,
                 "is_fallback": True
             }
+=======
+    triggers = ["can't remember", "forgot the name", "what is it called", "that thing", "um", "uh"]
+    
+    # Check if any trigger phrase is in the transcript
+    if any(trigger in transcript for trigger in triggers):
+        # Call OpenRouter API
+        print(f"Trigger detected in transcript context: {transcript}")
+        # We pass the full transcript as the prompt context
+        suggestions = openrouter.get_openrouter_suggestions(transcript)
+        
+        return {
+            "suggestions": suggestions,
+            "context_detected": True
+        }
+>>>>>>> 04e9ff19073840e8ed30be4b2c2e0f8c55deb483
     
     return {
         "suggestions": [],
@@ -80,5 +100,4 @@ async def get_suggestions(request: SuggestionRequest):
     }
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
