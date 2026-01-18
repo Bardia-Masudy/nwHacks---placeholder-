@@ -12,12 +12,14 @@ export class SpeechService {
         this.onResult = onResult;
         this.onError = onError;
 
-        if ('webkitSpeechRecognition' in window) {
-            const SpeechRecognition = (window as any).webkitSpeechRecognition;
+        // Support both standard and webkit prefixed API (Android Chrome vs iOS Safari)
+        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
             this.recognition = new SpeechRecognition();
             this.recognition.continuous = true;
             this.recognition.interimResults = true;
             this.recognition.lang = 'en-US';
+            this.recognition.maxAlternatives = 1; // Improves Android compatibility
 
             this.recognition.onresult = (event: any) => {
                 let interimTranscript = '';
@@ -44,16 +46,28 @@ export class SpeechService {
                 if (event.error === 'not-allowed') {
                     this.onError("Microphone access denied.");
                     this.shouldRestart = false;
+                } else if (event.error === 'network') {
+                    // Network errors are common on Android, just log and continue
+                    console.warn("Network error in speech recognition, will retry automatically");
+                } else if (event.error === 'no-speech') {
+                    // Silence is normal, don't treat as error
+                    console.log("No speech detected, continuing to listen");
+                } else if (event.error === 'aborted') {
+                    // Aborted is common during restarts, ignore
+                    console.log("Speech recognition aborted, will restart if needed");
                 }
             };
 
             this.recognition.onend = () => {
                 if (this.shouldRestart && this.isListening) {
-                    try {
-                        this.recognition.start();
-                    } catch (e) {
-                        // Ignore if already started
-                    }
+                    // Add delay before restarting - critical for Android Chrome stability
+                    setTimeout(() => {
+                        try {
+                            this.recognition.start();
+                        } catch (e) {
+                            console.error("Failed to restart speech recognition:", e);
+                        }
+                    }, 200); // 200ms delay helps Android handle restart
                 } else {
                     this.isListening = false;
                 }
