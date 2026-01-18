@@ -83,20 +83,30 @@ const ReportView: React.FC<ReportViewProps> = ({ logs, onClose }) => {
                     {/* Top Metrics */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-3 print:gap-4">
                         <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 print:p-3 print:border-2 print:rounded-lg">
-                            <h3 className="text-blue-600 font-semibold mb-1 print:text-xs print:text-black">Total Words Logged</h3>
-                            <p className="text-4xl font-bold text-slate-800 print:text-xl">{logs.length}</p>
+                            <h3 className="text-blue-600 font-semibold mb-1 print:text-xs print:text-black">Words Recovered</h3>
+                            <p className="text-4xl font-bold text-slate-800 print:text-xl">
+                                {logs.filter(l => l.selectionMethod === 'voice_confirmed' || l.selectionMethod === 'manual_click').length}
+                            </p>
+                            <p className="text-sm text-slate-500 mt-1 print:text-[10px]">Confirmed by user</p>
                         </div>
                         <div className="bg-amber-50 p-6 rounded-xl border border-amber-100 print:p-3 print:border-2 print:rounded-lg">
-                            <h3 className="text-amber-600 font-semibold mb-1 print:text-xs print:text-black">Active Categories</h3>
-                            <p className="text-4xl font-bold text-slate-800 print:text-xl">{categoryData.length}</p>
+                            <h3 className="text-amber-600 font-semibold mb-1 print:text-xs print:text-black">Passive Assists</h3>
+                            <p className="text-4xl font-bold text-slate-800 print:text-xl">
+                                {logs.filter(l => l.selectionMethod === 'implicit_split').length}
+                            </p>
+                            <p className="text-sm text-slate-500 mt-1 print:text-[10px]">Suggestions viewed</p>
                         </div>
                         <div className="bg-emerald-50 p-6 rounded-xl border border-emerald-100 print:p-3 print:border-2 print:rounded-lg">
-                            <h3 className="text-emerald-600 font-semibold mb-1 print:text-xs print:text-black">Voice Success Rate</h3>
+                            <h3 className="text-emerald-600 font-semibold mb-1 print:text-xs print:text-black">Engagement Rate</h3>
                             <p className="text-4xl font-bold text-slate-800 print:text-xl">
-                                {logs.length > 0
-                                    ? Math.round((logs.filter(l => l.selectionMethod === 'voice_confirmed').length / logs.length) * 100)
-                                    : 0}%
+                                {(() => {
+                                    const activeCount = logs.filter(l => l.selectionMethod === 'voice_confirmed' || l.selectionMethod === 'manual_click').length;
+                                    const passiveCount = logs.filter(l => l.selectionMethod === 'implicit_split').length;
+                                    const total = activeCount + passiveCount;
+                                    return total > 0 ? Math.round((activeCount / total) * 100) : 0;
+                                })()}%
                             </p>
+                            <p className="text-sm text-slate-500 mt-1 print:text-[10px]">Pct of suggestions acted upon</p>
                         </div>
                     </div>
 
