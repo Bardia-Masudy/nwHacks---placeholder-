@@ -20,7 +20,6 @@ const AppContent: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [finalTranscript, setFinalTranscript] = useState<string>("");
     const [interimTranscript, setInterimTranscript] = useState<string>("");
-    const [confirmationMsg, setConfirmationMsg] = useState<string | null>(null);
 
     const transcript = finalTranscript + (finalTranscript && interimTranscript ? " " : "") + interimTranscript;
 
@@ -31,15 +30,6 @@ const AppContent: React.FC = () => {
     useEffect(() => {
         suggestionCtxRef.current = suggestionCtx;
     }, [suggestionCtx]);
-
-    const handleSelection = (word: string, method: WordLog['selectionMethod'], category: string) => {
-        addLog(word, category, 1.0, method);
-        setSuggestionCtx(null);
-        setFinalTranscript("");
-        setInterimTranscript("");
-        setConfirmationMsg(word);
-        setTimeout(() => setConfirmationMsg(null), 1500);
-    };
 
     const addLog = (word: string, category: string, weight: number, method: WordLog['selectionMethod']) => {
         const newLog: WordLog = {
@@ -98,7 +88,10 @@ const AppContent: React.FC = () => {
                 onConfirmedWord: (word) => {
                     const current = suggestionCtxRef.current;
                     const category = current?.category || 'General';
-                    handleSelection(word, 'voice_confirmed', category);
+                    addLog(word, category, 1.0, 'voice_confirmed');
+                    setSuggestionCtx(null);
+                    setFinalTranscript("");
+                    setInterimTranscript("");
                 },
                 onRejectWord: () => {
                     setSuggestionCtx(null);
@@ -179,7 +172,10 @@ const AppContent: React.FC = () => {
 
     const handleManualSelect = (word: string, index: number) => {
         if (!suggestionCtx) return;
-        handleSelection(word, 'manual_click', suggestionCtx.category);
+        addLog(word, suggestionCtx.category, 1.0, 'manual_click');
+        setSuggestionCtx(null);
+        setFinalTranscript("");
+        setInterimTranscript("");
     };
 
     const handleSkip = () => {
@@ -259,25 +255,8 @@ const AppContent: React.FC = () => {
                 </AnimatePresence>
 
                 <AnimatePresence mode="wait">
-                    {/* Confirmation State */}
-                    {confirmationMsg && (
-                        <motion.div
-                            key="confirmation-state"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="flex flex-col items-center justify-center min-h-[40vh]"
-                        >
-                            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-sm">
-                                <CheckCircle2 className="w-10 h-10 text-green-600" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Selected</h3>
-                            <p className="text-3xl text-blue-600 font-black tracking-tight">{confirmationMsg}</p>
-                        </motion.div>
-                    )}
-
                     {/* Introduction / Empty State */}
-                    {!isRecording && !suggestionCtx && !confirmationMsg && (
+                    {!isRecording && !suggestionCtx && (
                         <motion.div
                             key="empty-state"
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -299,7 +278,7 @@ const AppContent: React.FC = () => {
                     )}
 
                     {/* Live Transcript */}
-                    {isRecording && !suggestionCtx && !confirmationMsg && (
+                    {isRecording && !suggestionCtx && (
                         <motion.div
                             key="recording-state"
                             initial={{ opacity: 0 }}
@@ -334,7 +313,7 @@ const AppContent: React.FC = () => {
                     )}
 
                     {/* Active Suggestions */}
-                    {suggestionCtx && !confirmationMsg && (
+                    {suggestionCtx && (
                         <motion.div
                             key="suggestion-state"
                             initial={{ opacity: 0, y: 30 }}
