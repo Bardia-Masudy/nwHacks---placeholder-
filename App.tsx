@@ -152,7 +152,6 @@ const AppContent: React.FC = () => {
 
     const handleSkip = () => {
         if (suggestionCtx) {
-            processImplicitSplit(suggestionCtx);
             setSuggestionCtx(null);
         }
     };
