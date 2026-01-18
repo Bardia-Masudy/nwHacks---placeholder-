@@ -96,7 +96,7 @@ export class GeminiService {
                         Your main task is to listen to the user and identify when they are struggling to find a specific word (they might describe it, use circumlocution, or pause).
 
                         Protocol:
-                        1. If you detect Anomia (description instead of the noun), immediately call the function 'provideSuggestions' with 3 guesses and a Category.
+                        1. If you detect Anomia (description instead of the noun) or when the user says "okay", "please", "now", immediately call the function 'provideSuggestions' with 3 guesses and a Category.
                         2. After offering suggestions, if the user says one of those words, call 'confirmSelection' with that word.
                         3. If the user continues talking without acknowledging one of your suggestions, call 'rejectSelection'.`,
                     tools: [{ functionDeclarations: [provideSuggestionsTool, confirmSelectionTool, rejectSelectionTool] }],
