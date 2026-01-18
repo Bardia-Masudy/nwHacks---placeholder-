@@ -61,6 +61,11 @@ const App: React.FC = () => {
                     addLog(word, category, 1.0, 'voice_confirmed');
                     setSuggestionCtx(null); // Clear suggestions after success
                 },
+                onRejectWord: () => {
+                    setSuggestionCtx( () => {
+                        return null; // Clear suggestions after rejection
+                    }); 
+                },
                 onTranscriptUpdate: () => { }, // Not strictly using transcript text in UI to keep it simple
                 onError: (err) => setError(err)
             });
@@ -70,42 +75,6 @@ const App: React.FC = () => {
             setError("Failed to start session.");
         }
     };
-  const handleStartSession = async () => {
-    setError(null);
-    try {
-      geminiRef.current = new GeminiService({
-        onSuggestions: (words, category) => {
-          // If previous suggestions existed and weren't selected, log them as implicit split
-          setSuggestionCtx(prev => {
-            if (prev) {
-               processImplicitSplit(prev);
-            }
-            return { words, category, timestamp: Date.now() };
-          });
-        },
-        onConfirmedWord: (word) => {
-           // Find category from current context or default to 'Unknown'
-           setSuggestionCtx(current => {
-             const category = current?.category || 'General';
-             addLog(word, category, 1.0, 'voice_confirmed');
-             return null; // Clear suggestions after success
-           });
-        },
-        onRejectWord: () => {
-            // Clear rejected words.
-            setSuggestionCtx(current => {
-                return null; // Clear suggestions
-            });
-        },
-        onTranscriptUpdate: () => {}, // Not strictly using transcript text in UI to keep it simple
-        onError: (err) => setError(err)
-      });
-      await geminiRef.current.connect();
-      setIsRecording(true);
-    } catch (e) {
-      setError("Failed to start session.");
-    }
-  };
 
     const handleStopSession = async () => { //TODO
         if (geminiRef.current) {
