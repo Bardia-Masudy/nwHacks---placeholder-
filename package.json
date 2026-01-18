@@ -11,7 +11,9 @@
   "dependencies": {
     "@google/genai": "^1.37.0",
     "firebase": "^12.8.0",
+    "framer-motion": "^12.27.0",
     "idb": "^8.0.3",
+    "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "recharts": "^3.6.0"
