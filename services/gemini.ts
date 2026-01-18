@@ -78,7 +78,7 @@ export class GeminiService {
         this.ai = new GoogleGenAI({ apiKey: apiKey || "" });
     }
 
-    async connect() {
+    async connect(enableText: boolean = false) {
         try {
             this.inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)(audioContextOptions);
 
@@ -88,10 +88,17 @@ export class GeminiService {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.currentStream = stream;
 
+            // Build modalities array - always include AUDIO, conditionally add TEXT
+            const modalities = [Modality.AUDIO];
+            if (enableText) {
+                modalities.push(Modality.TEXT);
+                console.log('[GeminiService] TEXT modality enabled for transcription');
+            }
+
             const sessionPromise = this.ai.live.connect({
                 model: "gemini-2.5-flash-native-audio-preview-12-2025",
                 config: {
-                    responseModalities: [Modality.AUDIO],
+                    responseModalities: modalities,
                     systemInstruction: `You are an empathetic Speech Language Pathology assistant for a person with Anomic Aphasia.
                         Your main task is to listen to the user and identify when they are struggling to find a specific word.
                         
@@ -149,6 +156,16 @@ export class GeminiService {
     }
 
     private async handleMessage(message: LiveServerMessage, sessionPromise: Promise<Session>) {
+        // Handle server content (text transcription) when TEXT modality is enabled
+        const serverContent = message.serverContent;
+        if (serverContent && serverContent.modelTurn && serverContent.modelTurn.parts) {
+            for (const part of serverContent.modelTurn.parts) {
+                if (part.text) {
+                    this.props.onTranscriptUpdate(part.text);
+                }
+            }
+        }
+
         // Handle Tool Calls
         const toolCall = message.toolCall;
         if (toolCall) {

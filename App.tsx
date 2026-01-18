@@ -77,6 +77,11 @@ const AppContent: React.FC = () => {
         setError(null);
         setFinalTranscript("");
         setInterimTranscript("");
+
+        // Check if Web Speech API is available
+        const hasWebSpeech = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+        console.log('[App] Web Speech API available:', hasWebSpeech);
+
         try {
             geminiRef.current = new GeminiService({
                 onSuggestions: (words, category) => {
@@ -98,24 +103,55 @@ const AppContent: React.FC = () => {
                 onRejectWord: () => {
                     setSuggestionCtx(null);
                 },
-                onTranscriptUpdate: () => { },
+                onTranscriptUpdate: (text) => {
+                    // Always use Gemini transcription - works on all devices including Android
+                    console.log('[App] Gemini transcription received:', text);
+                    setFinalTranscript(prev => prev + text);
+                },
                 onError: (err) => setError(err)
             });
 
-            speechRef.current = new SpeechService(
-                (text, isFinal) => {
-                    if (isFinal) {
-                        setFinalTranscript(prev => prev ? prev + ". " + text : text);
-                        setInterimTranscript("");
-                    } else {
-                        setInterimTranscript(text);
-                    }
-                },
-                (err) => console.warn("Speech warning:", err)
-            );
+            // Try Web Speech API first (faster for iOS/some Android devices)
+            if (hasWebSpeech) {
+                try {
+                    speechRef.current = new SpeechService(
+                        (text, isFinal) => {
+                            if (isFinal) {
+                                setFinalTranscript(prev => prev ? prev + ". " + text : text);
+                                setInterimTranscript("");
+                            } else {
+                                setInterimTranscript(text);
+                            }
+                        },
+                        (err) => {
+                            console.warn("[App] Speech API error, falling back to Gemini:", err);
+                            // Don't show error to user, Gemini will handle transcription
+                        }
+                    );
+                    console.log('[App] Web Speech Service created');
+                } catch (e) {
+                    console.warn('[App] Failed to create Speech Service, will use Gemini:', e);
+                    speechRef.current = null;
+                }
+            } else {
+                console.log('[App] Web Speech not available, using Gemini transcription only');
+            }
 
-            await geminiRef.current.connect();
-            speechRef.current.start();
+            // Connect to Gemini with TEXT modality always enabled for universal transcription
+            // This ensures ALL devices (especially Android) get reliable transcription
+            await geminiRef.current.connect(true);
+
+            // Start Web Speech if available
+            if (speechRef.current) {
+                try {
+                    speechRef.current.start();
+                    console.log('[App] Web Speech started');
+                } catch (e) {
+                    console.warn('[App] Failed to start Web Speech, using Gemini only:', e);
+                    speechRef.current = null;
+                }
+            }
+
             setIsRecording(true);
         } catch (e) {
             setError("Failed to start session.");
