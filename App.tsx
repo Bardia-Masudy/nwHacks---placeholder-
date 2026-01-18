@@ -20,7 +20,6 @@ const AppContent: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [finalTranscript, setFinalTranscript] = useState<string>("");
     const [interimTranscript, setInterimTranscript] = useState<string>("");
-    const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
 
     const transcript = finalTranscript + (finalTranscript && interimTranscript ? " " : "") + interimTranscript;
 
@@ -74,11 +73,6 @@ const AppContent: React.FC = () => {
         setError(null);
         setFinalTranscript("");
         setInterimTranscript("");
-
-        // Check if Web Speech API is available
-        const hasWebSpeech = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
-        console.log('[App] Web Speech API available:', hasWebSpeech);
-
         try {
             geminiRef.current = new GeminiService({
                 onSuggestions: (words, category) => {
@@ -93,62 +87,28 @@ const AppContent: React.FC = () => {
                     const category = current?.category || 'General';
                     addLog(word, category, 1.0, 'voice_confirmed');
                     setSuggestionCtx(null);
-                    setFinalTranscript("");
-                    setInterimTranscript("");
-                    showConfirmation(word);
                 },
                 onRejectWord: () => {
                     setSuggestionCtx(null);
                 },
-                onTranscriptUpdate: (text) => {
-                    // Always use Gemini transcription - works on all devices including Android
-                    console.log('[App] Gemini transcription received:', text);
-                    setFinalTranscript(prev => prev + text);
-                },
+                onTranscriptUpdate: () => { },
                 onError: (err) => setError(err)
             });
 
-            // Try Web Speech API first (faster for iOS/some Android devices)
-            if (hasWebSpeech) {
-                try {
-                    speechRef.current = new SpeechService(
-                        (text, isFinal) => {
-                            if (isFinal) {
-                                setFinalTranscript(prev => prev ? prev + ". " + text : text);
-                                setInterimTranscript("");
-                            } else {
-                                setInterimTranscript(text);
-                            }
-                        },
-                        (err) => {
-                            console.warn("[App] Speech API error, falling back to Gemini:", err);
-                            // Don't show error to user, Gemini will handle transcription
-                        }
-                    );
-                    console.log('[App] Web Speech Service created');
-                } catch (e) {
-                    console.warn('[App] Failed to create Speech Service, will use Gemini:', e);
-                    speechRef.current = null;
-                }
-            } else {
-                console.log('[App] Web Speech not available, using Gemini transcription only');
-            }
+            speechRef.current = new SpeechService(
+                (text, isFinal) => {
+                    if (isFinal) {
+                        setFinalTranscript(prev => prev ? prev + ". " + text : text);
+                        setInterimTranscript("");
+                    } else {
+                        setInterimTranscript(text);
+                    }
+                },
+                (err) => console.warn("Speech warning:", err)
+            );
 
-            // Connect to Gemini with TEXT modality always enabled for universal transcription
-            // This ensures ALL devices (especially Android) get reliable transcription
-            await geminiRef.current.connect(true);
-
-            // Start Web Speech if available
-            if (speechRef.current) {
-                try {
-                    speechRef.current.start();
-                    console.log('[App] Web Speech started');
-                } catch (e) {
-                    console.warn('[App] Failed to start Web Speech, using Gemini only:', e);
-                    speechRef.current = null;
-                }
-            }
-
+            await geminiRef.current.connect();
+            speechRef.current.start();
             setIsRecording(true);
         } catch (e) {
             setError("Failed to start session.");
@@ -177,7 +137,7 @@ const AppContent: React.FC = () => {
     const handleManualSelect = (word: string, index: number) => {
         if (!suggestionCtx) return;
         addLog(word, suggestionCtx.category, 1.0, 'manual_click');
-        setSuggestionCtx(null); // Clear after selection
+        setSuggestionCtx(null);
     };
 
     const handleSkip = () => {
@@ -263,90 +223,94 @@ const AppContent: React.FC = () => {
                     </div>
                 )}
 
-                    {/* Active Suggestions */}
-                    {suggestionCtx && (
-                        <motion.div
-                            key="suggestion-state"
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -30 }}
-                            className="space-y-6 md:space-y-8"
-                        >
-                            <div className="flex items-center justify-between px-2">
-                                <div className="flex items-center gap-2 md:gap-3">
-                                    <div className="px-2 md:px-3 py-0.5 md:py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest">
-                                        {suggestionCtx.category}
-                                    </div>
-                                    <h3 className="text-slate-400 text-xs md:text-sm font-medium">Suggestions</h3>
+                {/* Active Suggestions */}
+                {suggestionCtx && (
+                    <motion.div
+                        key="suggestion-state"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -30 }}
+                        className="space-y-6 md:space-y-8"
+                    >
+                        <div className="flex items-center justify-between px-2">
+                            <div className="flex items-center gap-2 md:gap-3">
+                                <div className="px-2 md:px-3 py-0.5 md:py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                                    {suggestionCtx.category}
                                 </div>
-                                <button
-                                    onClick={handleSkip}
-                                    className="text-slate-400 hover:text-slate-600 text-xs md:text-sm font-bold transition-colors flex items-center gap-1"
+                                <h3 className="text-slate-400 text-xs md:text-sm font-medium">Suggestions</h3>
+                            </div>
+                            <button
+                                onClick={handleSkip}
+                                className="text-slate-400 hover:text-slate-600 text-xs md:text-sm font-bold transition-colors flex items-center gap-1"
+                            >
+                                Skip <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                            </button>
+                        </div>
+
+                        <div className="grid gap-3 md:gap-5">
+                            {suggestionCtx.words.map((word, idx) => (
+                                <motion.button
+                                    key={`${word}-${idx}`}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    whileHover={{ scale: 1.01, translateX: 4 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => handleManualSelect(word, idx)}
+                                    className="group relative w-full text-left p-6 md:p-10 bg-white border border-slate-200 hover:border-blue-500 rounded-2xl md:rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 flex items-center justify-between overflow-hidden"
                                 >
-                                    Skip <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                </button>
-                            </div>
+                                    <div className="absolute top-0 left-0 w-1.5 md:w-2 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <span className="text-2xl md:text-6xl font-black text-slate-900 group-hover:text-blue-600 tracking-tighter">
+                                        {word}
+                                    </span>
+                                    <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 group-hover:bg-blue-600 flex items-center justify-center transition-all duration-300 shadow-inner">
+                                        <CheckCircle2 className="w-5 h-5 md:w-7 md:h-7 text-slate-300 group-hover:text-white transition-colors" />
+                                    </div>
+                                </motion.button>
+                            ))}
+                        </div>
+                        <p className="text-center text-slate-400 text-sm font-medium pt-4">
+                            Tap the word you were looking for, or just say it out loud.
+                        </p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </main>
 
-                            <div className="grid gap-3 md:gap-4">
-                                {suggestionCtx.words.map((word, idx) => (
-                                    <motion.button
-                                        key={`${word}-${idx}`}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: idx * 0.1 }}
-                                        whileHover={{ scale: 1.01, translateX: 4 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => handleManualSelect(word, idx)}
-                                        className="group relative w-full text-left p-4 md:p-6 bg-white border border-slate-200 hover:border-blue-500 rounded-xl md:rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 flex items-center justify-between overflow-hidden"
-                                    >
-                                        <div className="absolute top-0 left-0 w-1 md:w-1.5 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                        <span className="text-xl md:text-4xl font-black text-slate-900 group-hover:text-blue-600 tracking-tighter">
-                                            {word}
-                                        </span>
-                                        <div className="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-slate-50 group-hover:bg-blue-600 flex items-center justify-center transition-all duration-300 shadow-inner">
-                                            <CheckCircle2 className="w-4 h-4 md:w-6 md:h-6 text-slate-300 group-hover:text-white transition-colors" />
-                                        </div>
-                                    </motion.button>
-                                ))}
-                            </div>
-                            <p className="text-center text-slate-400 text-sm font-medium pt-4">
-                                Tap the word you were looking for, or just say it out loud.
-                            </p>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </main>
-
-            {/* Floating Action Bar (Sticky Bottom) */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-slate-200 p-6 z-20">
-                <div className="max-w-md mx-auto flex items-center justify-center">
-                    <button
-                        onClick={isRecording ? handleStopSession : handleStartSession}
-                        className={`
+            {/* Fixed Bottom Action Bar */ }
+    <div className="bg-white/80 backdrop-blur-xl border-t border-slate-200 p-4 md:p-6 pb-8 md:pb-10 z-40 flex-shrink-0">
+        <div className="max-w-md mx-auto flex flex-col items-center gap-3 md:gap-4">
+            <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={isRecording ? handleStopSession : handleStartSession}
+                className={`
               relative flex items-center justify-center w-20 h-20 rounded-full shadow-lg transition-all duration-300
               ${isRecording
-                ? 'bg-red-500 hover:bg-red-600 ring-4 ring-red-200 animate-pulse'
-                : 'bg-blue-600 hover:bg-blue-700 ring-4 ring-blue-100 hover:scale-105'
-              }
+                        ? 'bg-red-500 hover:bg-red-600 ring-4 ring-red-200 animate-pulse'
+                        : 'bg-blue-600 hover:bg-blue-700 ring-4 ring-blue-100 hover:scale-105'
+                    }
             `}
-          >
-            {isRecording ? (
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
-            ) : (
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-            )}
-          </button>
+            >
+                {isRecording ? (
+                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
+                ) : (
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                )}
+            </button>
         </div>
         <p className="text-center mt-3 text-sm font-medium text-slate-500">
-          {isRecording ? "Listening..." : "Tap to Start"}
+            {isRecording ? "Listening..." : "Tap to Start"}
         </p>
-      </div>
+    </div>
 
-            {/* Report Modal */}
-            {showReport && (
-                <ReportView logs={logs} onClose={() => setShowReport(false)} />
-            )}
-        </div>
+    {/* Report Modal */ }
+    {
+        showReport && (
+            <ReportView logs={logs} onClose={() => setShowReport(false)} />
+        )
+    }
+        </div >
     );
 };
 
