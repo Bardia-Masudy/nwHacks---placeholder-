@@ -20,6 +20,9 @@ const AppContent: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [finalTranscript, setFinalTranscript] = useState<string>("");
     const [interimTranscript, setInterimTranscript] = useState<string>("");
+    const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
+    const [selectedWordIndex, setSelectedWordIndex] = useState<number | null>(null);
+
 
     const transcript = finalTranscript + (finalTranscript && interimTranscript ? " " : "") + interimTranscript;
 
@@ -67,6 +70,11 @@ const AppContent: React.FC = () => {
         });
     }, []);
 
+    const showConfirmation = (word: string) => {
+        setConfirmationMessage(`Selected: ${word}`);
+        setTimeout(() => setConfirmationMessage(null), 2000);
+    };
+
     const handleStartSession = async () => {
         setError(null);
         setFinalTranscript("");
@@ -85,6 +93,10 @@ const AppContent: React.FC = () => {
                     const category = current?.category || 'General';
                     addLog(word, category, 1.0, 'voice_confirmed');
                     setSuggestionCtx(null);
+                    setFinalTranscript("");
+                    setInterimTranscript("");
+                    showConfirmation(word);
+
                 },
                 onRejectWord: () => {
                     setSuggestionCtx(null);
@@ -134,8 +146,19 @@ const AppContent: React.FC = () => {
 
     const handleManualSelect = (word: string, index: number) => {
         if (!suggestionCtx) return;
-        addLog(word, suggestionCtx.category, 1.0, 'manual_click');
-        setSuggestionCtx(null);
+
+        // Show visual cue
+        setSelectedWordIndex(index);
+
+        // Delay to show the cue, then process selection
+        setTimeout(() => {
+            addLog(word, suggestionCtx.category, 1.0, 'manual_click');
+            setSuggestionCtx(null);
+            setFinalTranscript("");
+            setInterimTranscript("");
+            setSelectedWordIndex(null);
+            showConfirmation(word);
+        }, 600);
     };
 
     const handleSkip = () => {
@@ -222,16 +245,16 @@ const AppContent: React.FC = () => {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="flex flex-col items-center justify-center min-h-full py-12 md:py-0"
+                            className="flex flex-col items-center justify-center min-h-full py-8 md:py-0"
                         >
-                            <div className="relative inline-block mb-8 md:mb-10">
+                            <div className="relative inline-block mb-6 md:mb-8">
                                 <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full"></div>
-                                <div className="relative w-24 h-24 md:w-32 md:h-32 bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl flex items-center justify-center mx-auto border border-slate-100">
-                                    <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-blue-600" />
+                                <div className="relative w-16 h-16 md:w-24 md:h-24 bg-white rounded-2xl md:rounded-3xl shadow-xl flex items-center justify-center mx-auto border border-slate-100">
+                                    <Sparkles className="w-8 h-8 md:w-12 md:h-12 text-blue-600" />
                                 </div>
                             </div>
-                            <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-3 md:mb-4 tracking-tight px-4 text-center">Ready to find your words?</h2>
-                            <p className="text-base md:text-xl text-slate-500 max-w-md mx-auto mb-8 md:mb-10 leading-relaxed px-6 text-center">
+                            <h2 className="text-xl md:text-3xl font-extrabold text-slate-900 mb-2 md:mb-3 tracking-tight px-4 text-center">Ready to find your words?</h2>
+                            <p className="text-sm md:text-lg text-slate-500 max-w-sm mx-auto mb-6 md:mb-8 leading-relaxed px-6 text-center">
                                 Start a session and I'll listen for pauses or struggles to offer helpful suggestions.
                             </p>
                         </motion.div>
@@ -297,26 +320,36 @@ const AppContent: React.FC = () => {
                             </div>
 
                             <div className="grid gap-3 md:gap-5">
-                                {suggestionCtx.words.map((word, idx) => (
-                                    <motion.button
-                                        key={`${word}-${idx}`}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: idx * 0.1 }}
-                                        whileHover={{ scale: 1.01, translateX: 4 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => handleManualSelect(word, idx)}
-                                        className="group relative w-full text-left p-6 md:p-10 bg-white border border-slate-200 hover:border-blue-500 rounded-2xl md:rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 flex items-center justify-between overflow-hidden"
-                                    >
-                                        <div className="absolute top-0 left-0 w-1.5 md:w-2 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                        <span className="text-2xl md:text-6xl font-black text-slate-900 group-hover:text-blue-600 tracking-tighter">
-                                            {word}
-                                        </span>
-                                        <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 group-hover:bg-blue-600 flex items-center justify-center transition-all duration-300 shadow-inner">
-                                            <CheckCircle2 className="w-5 h-5 md:w-7 md:h-7 text-slate-300 group-hover:text-white transition-colors" />
-                                        </div>
-                                    </motion.button>
-                                ))}
+                                {suggestionCtx.words.map((word, idx) => {
+                                    const isSelected = selectedWordIndex === idx;
+                                    return (
+                                        <motion.button
+                                            key={`${word}-${idx}`}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{
+                                                opacity: 1,
+                                                x: 0,
+                                                scale: isSelected ? 1.01 : 1
+                                            }}
+                                            transition={{ delay: idx * 0.1 }}
+                                            whileHover={{ scale: 1.01, translateX: 4 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => handleManualSelect(word, idx)}
+                                            className={`
+                                                group relative w-full text-left p-6 md:p-10 bg-white rounded-2xl md:rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 flex items-center justify-between overflow-hidden
+                                                ${isSelected ? 'border-4 border-blue-500' : 'border border-slate-200 hover:border-blue-500'}
+                                            `}
+                                        >
+                                            <div className={`absolute top-0 left-0 w-1.5 md:w-2 h-full bg-blue-600 transition-opacity ${isSelected ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}></div>
+                                            <span className={`text-xl md:text-4xl font-black tracking-tighter ${isSelected ? 'text-blue-600' : 'text-slate-900 group-hover:text-blue-600'}`}>
+                                                {word}
+                                            </span>
+                                            <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-300 shadow-inner ${isSelected ? 'bg-blue-600' : 'bg-slate-50 group-hover:bg-blue-600'}`}>
+                                                <CheckCircle2 className={`w-5 h-5 md:w-7 md:h-7 transition-colors ${isSelected ? 'text-white' : 'text-slate-300 group-hover:text-white'}`} />
+                                            </div>
+                                        </motion.button>
+                                    );
+                                })}
                             </div>
                             <p className="text-center text-slate-400 text-sm font-medium pt-4">
                                 Tap the word you were looking for, or just say it out loud.
@@ -325,6 +358,24 @@ const AppContent: React.FC = () => {
                     )}
                 </AnimatePresence>
             </main>
+
+            {/* Confirmation Toast */}
+            <AnimatePresence>
+                {confirmationMessage && (
+                    <div className="fixed top-24 left-0 right-0 z-50 flex justify-center pointer-events-none">
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            className="bg-slate-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 pointer-events-auto"
+                        >
+                            <CheckCircle2 className="w-5 h-5 text-green-400" />
+                            <span className="font-medium">{confirmationMessage}</span>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
 
             {/* Fixed Bottom Action Bar */}
             <div className="bg-white/80 backdrop-blur-xl border-t border-slate-200 p-4 md:p-6 pb-8 md:pb-10 z-40 flex-shrink-0">
